@@ -1,226 +1,235 @@
-# Polymarket Arbitrage + Copy Trading Bot
+# Polymarket Arbitrage Bot · Copy Trading Bot
 
-A sophisticated trading bot that combines **arbitrage detection** and **copy trading** strategies on Polymarket. This bot monitors successful wallets (like arbitrage-focused bots) and selectively copies their trades when arbitrage opportunities are detected.
+**Polymarket arbitrage bot** — a **polymarket copy trading bot** that watches a target wallet’s trades in real time and mirrors them on your account. Optional **arbitrage filter**: copy only when a YES+NO &lt; $1 opportunity exists. Configurable size, order type, and auto-redemption of resolved markets.
+
+> **Search:** polymarket arbitrage bot · Polymarket copy bot · polymarket copy trading bot · Polymarket arbitrage · prediction market bot · mirror trading Polymarket
+
+## About this project
+
+This repo is a **Polymarket arbitrage bot** and **copy trading bot** (searchable as *polymarket arbitrage bot*, *Polymarket copy bot*): it connects to Polymarket's real-time feed, follows a chosen wallet's activity, and can copy only when an internal arbitrage opportunity exists (YES + NO &lt; $1), or copy every trade. Use it for arbitrage-style or mirror/copy trading on Polymarket prediction markets with optional auto-redemption.
+
+## Contact
+
+Questions or collaboration:
+
+| Contact | Handle |
+|---------|--------|
+| **Telegram** | [@hodlwarden](https://t.me/hodlwarden) |
+| **Email**   | [hodlwarden@gmail.com](mailto:hodlwarden@gmail.com) |
 
 ## Features
 
-### 🎯 Dual Strategy Approach
-- **Arbitrage Detection**: Automatically detects risk-free arbitrage opportunities (YES + NO < $1)
-- **Copy Trading**: Monitors and replicates trades from proven wallets
-- **Hybrid Filtering**: Only copies trades when arbitrage signals align
+- **Real-time copy trading** – Subscribes to Polymarket’s activity feed and copies trades from a chosen wallet as they happen.
+- **Optional arbitrage filter** – When `REQUIRE_ARB_SIGNAL=true`, copies only when an internal arbitrage opportunity exists (YES + NO &lt; $1) in that market.
+- **Configurable execution** – Size multiplier, max order size, order type (FAK/FOK), tick size, and neg-risk support.
+- **USDC & CLOB setup** – Approves USDC allowances and syncs with the CLOB API on startup.
+- **Automatic redemption** – Optional periodic redemption of resolved markets (with copy trading paused during redemption).
+- **Standalone redeem tools** – Redeem by condition ID or run batch redemption from holdings/API.
 
-### 🔍 Key Capabilities
-- Real-time wallet monitoring for target addresses
-- Internal arbitrage detection (YES+NO mispricings)
-- Cross-platform arbitrage support (extensible to Kalshi, etc.)
-- Risk management with position limits and daily loss controls
-- Automatic hedging for unbalanced positions
-- Configurable position sizing and filters
+## Requirements
 
-### 🛡️ Risk Management
-- Total exposure limits
-- Per-market position caps
-- Daily loss limits
-- Minimum liquidity requirements
-- Slippage protection
+- **Node.js** 18+ (or **Bun** for redeem/auto-redeem scripts)
+- **Polygon** wallet with USDC for trading and gas
 
-# Contact Me
-If you have any question or collaboration offer, feel free to text me. You're always welcome
-Telegram - [@hodlwarden](https://t.me/hodlwarden)
+## Quick Start
 
-## Architecture
-
-```
-src/
-├── bot.ts                    # Main orchestrator
-├── config.ts                 # Configuration management
-├── polymarket-client.ts      # Polymarket API client
-├── arbitrage-detector.ts     # Arbitrage opportunity detection
-├── wallet-monitor.ts         # Wallet activity monitoring
-├── copy-trader.ts           # Copy trading execution engine
-├── risk-manager.ts          # Risk limits and position tracking
-└── order-executor.ts        # Order placement and management
-```
-
-## Setup
-
-### 1. Install Dependencies
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configure Environment
+### 2. Environment variables
 
-Copy `.env.example` to `.env` and fill in your settings:
+Create a `.env` file in the project root. Required and optional variables:
 
-```bash
-cp .env.example .env
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PRIVATE_KEY` | Yes | Your wallet private key (for signing orders and redeeming). |
+| `TARGET_WALLET` | Yes* | Ethereum address of the wallet whose trades to copy. |
+| `RPC_TOKEN` | Yes** | Polygon RPC URL or API token (e.g. Alchemy/Infura) for chain and contract calls. |
+| `CHAIN_ID` | No | Chain ID (default: Polygon). |
+| `CLOB_API_URL` | No | CLOB API base URL (default: `https://clob.polymarket.com`). |
+| `USER_REAL_TIME_DATA_URL` | No | Real-time data WebSocket host (uses Polymarket default if unset). |
+| `SIZE_MULTIPLIER` | No | Multiply copied size by this (default: `1.0`). |
+| `MAX_ORDER_AMOUNT` | No | Cap per order size (no cap if unset). |
+| `ORDER_TYPE` | No | `FAK` or `FOK` (default: `FAK`). |
+| `TICK_SIZE` | No | `0.1`, `0.01`, `0.001`, or `0.0001` (default: `0.01`). |
+| `NEG_RISK` | No | `true` or `false` for neg-risk markets. |
+| `ENABLE_COPY_TRADING` | No | `true` or `false` (default: `true`). |
+| `REQUIRE_ARB_SIGNAL` | No | When `true`, only copy a trade if there is an internal arbitrage opportunity (YES + NO &lt; $1) in that market. Default: `false`. |
+| `MIN_ARB_PROFIT_PCT` | No | Minimum arbitrage profit % to consider (e.g. `0.01` = 1%). Used when `REQUIRE_ARB_SIGNAL=true`. Default: `0.01`. |
+| `REDEEM_DURATION` | No | Auto-redeem interval in **minutes** (e.g. `60` = every hour). If set, copy trading is paused during redemption. |
+| `DEBUG` | No | `true` for extra logging. |
+
+\* Required when copy trading is enabled.  
+\** Required for allowance checks and redemption.
+
+**Example `.env`:**
+
+```env
+PRIVATE_KEY=0x...
+TARGET_WALLET=0x...
+RPC_TOKEN=https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY
+
+# Optional
+SIZE_MULTIPLIER=1.0
+MAX_ORDER_AMOUNT=100
+ORDER_TYPE=FAK
+TICK_SIZE=0.01
+NEG_RISK=false
+REDEEM_DURATION=60
 ```
 
-Key settings:
-- `TARGET_WALLET_1`: Wallet address to copy trade (get from Polymarket profile)
-- `PRIVATE_KEY`: Your private key for signing orders (required for order execution)
-- `POLYGON_RPC_URL`: Polygon RPC endpoint for on-chain monitoring (required)
-- `MAX_TOTAL_EXPOSURE_USD`: Maximum total exposure limit
-- `MIN_ARB_PROFIT_PCT`: Minimum arbitrage profit % to execute
-
-### 3. Get Wallet Address
-
-To find a wallet address from a Polymarket username:
-1. Visit the profile (e.g., `https://polymarket.com/@gabagool22`)
-2. Check the profile page or use browser dev tools to find the wallet address
-3. Alternatively, use Polymarket Analytics or Dune queries
-
-### 4. Build and Run the Bot
+### 3. Run the bot
 
 ```bash
-# Build TypeScript
-npm run build
-
-# Run the bot
 npm start
-
-# Or run in development mode with auto-reload
-npm run dev
 ```
 
-## Configuration
+This will:
 
-### Wallet Configuration
+1. Create credentials if needed.
+2. Initialize the CLOB client and approve USDC allowances (when copy trading is enabled).
+3. Connect to the real-time feed and subscribe to `activity:trades`.
+4. Copy trades from `TARGET_WALLET` using your configured multiplier and limits.
+5. If `REDEEM_DURATION` is set, run redemption on that interval and pause copy trading during redemption.
 
-Edit `src/config.ts` or use environment variables to configure target wallets:
+## Scripts
 
-```typescript
-{
-  address: "0x...",
-  name: "gabagool22",
-  enabled: true,
-  minWinRate: 0.70,
-  maxPositionSizeUsd: 2000.0,
-  positionSizeMultiplier: 0.01,  // Copy 1% of wallet's position size
-  requireArbSignal: true  // Only copy when arbitrage detected
-}
+| Command | Description |
+|--------|-------------|
+| `npm start` | Start the copy-trading bot (`ts-node src/index.ts`). |
+| `npm run redeem` | Standalone redemption by condition ID (`ts-node src/redeem.ts`). |
+
+### Redeem script
+
+Redeem a single market by condition ID:
+
+```bash
+npm run redeem -- <conditionId> [indexSet1 indexSet2 ...]
+# Example:
+npm run redeem -- 0x5f65177b394277fd294cd75650044e32ba009a95022d88a0c1d565897d72f8f1 1 2
 ```
 
-### Arbitrage Settings
+Or set in `.env`:
 
-- `minArbProfitPct`: Minimum profit % to execute (default: 1%)
-- `maxArbProfitPct`: Maximum expected profit % (default: 5%)
-- `internalArbEnabled`: Enable YES+NO arbitrage detection
-- `crossPlatformEnabled`: Enable cross-platform arbitrage (requires additional APIs)
+```env
+CONDITION_ID=0x5f65177b394277fd294cd75650044e32ba009a95022d88a0c1d565897d72f8f1
+INDEX_SETS=1,2
+```
 
-### Risk Limits
+Then:
 
-- `maxTotalExposureUsd`: Maximum total exposure across all positions
-- `maxPositionPerMarketUsd`: Maximum position size per market
-- `maxDailyLossUsd`: Daily loss limit before pausing trading
-- `enableAutoHedge`: Automatically hedge unbalanced positions
+```bash
+npm run redeem
+```
 
-## How It Works
+If no condition ID is given, the script prints current holdings and usage.
 
-### 1. Wallet Monitoring
-The bot continuously monitors configured wallet addresses for new trades via Polymarket's API or on-chain events.
+### Auto-redeem script (Bun)
 
-### 2. Arbitrage Detection
-Simultaneously scans markets for arbitrage opportunities:
-- **Internal Arbitrage**: Detects when YES + NO prices sum to < $1 (risk-free profit)
-- **Cross-Platform**: Compares prices across platforms (extensible)
+For batch redemption and market checks, use the auto-redeem script (Bun):
 
-### 3. Copy Trading with Filters
-When a monitored wallet makes a trade:
-1. Check if wallet meets criteria (win rate, etc.)
-2. **If `requireArbSignal=true`**: Verify arbitrage opportunity exists in that market
-3. Calculate position size (scaled by multiplier)
-4. Check risk limits
-5. Execute copy trade (or full arbitrage if internal arb detected)
+```bash
+bun src/auto-redeem.ts                    # Redeem all resolved markets from holdings
+bun src/auto-redeem.ts --api              # Fetch markets from API and redeem winning positions
+bun src/auto-redeem.ts --dry-run          # Preview only, no redemption
+bun src/auto-redeem.ts --check <conditionId>  # Check if a market is resolved
+```
 
-### 4. Risk Management
-- Tracks all positions and exposure
-- Enforces limits before opening new positions
-- Monitors daily PnL
-- Suggests hedging for unbalanced positions
+## Project structure
 
-## Strategy Logic
+```
+src/
+├── index.ts              # Main copy-trading bot entry
+├── arbitrage.ts          # Arbitrage detection (YES+NO < $1) when REQUIRE_ARB_SIGNAL=true
+├── redeem.ts             # CLI: redeem by condition ID
+├── auto-redeem.ts        # Batch redemption and --check (Bun)
+├── order-builder/        # Order construction and copy-trade execution
+├── providers/            # CLOB client and real-time WebSocket provider
+├── security/             # Credentials, USDC allowance, CLOB balance allowance
+└── utils/                # Types, logger, balance, holdings, redeem helpers
+```
 
-### Pure Arbitrage Mode
-When an internal arbitrage opportunity is detected:
-- Buy both YES and NO tokens
-- Lock in guaranteed profit on market resolution
-- Profit = $1 - (YES_price + NO_price) - fees
+## How it works
 
-### Copy Trading Mode
-When copying a wallet trade:
-- Replicate the trade proportionally
-- Only execute if arbitrage signal exists (if enabled)
-- Scale position size by configured multiplier
+1. **Connection** – The bot connects to Polymarket’s real-time data service and subscribes to trade activity.
+2. **Filtering** – Each trade is checked for `proxyWallet === TARGET_WALLET`.
+3. **Arbitrage check (optional)** – If `REQUIRE_ARB_SIGNAL=true`, the bot checks whether that market has an internal arbitrage opportunity before copying (see [Arbitrage filter](#arbitrage-filter-arbitrage-copy-bot-style) below).
+4. **Copy** – Matching trades are sent to the order builder, which places orders on the CLOB with your `SIZE_MULTIPLIER`, `MAX_ORDER_AMOUNT`, `ORDER_TYPE`, `TICK_SIZE`, and `NEG_RISK` settings.
+5. **Redemption** – If `REDEEM_DURATION` is set, on a timer the bot pauses copy trading, runs redemption (e.g. from `token-holding.json`), then resumes.
 
-### Hybrid Mode (Recommended)
-- Monitor arbitrage-focused wallets
-- Copy their trades when arbitrage opportunities align
-- Combines reliability of arb with directional upside
+---
 
-## Important Notes
+## Arbitrage filter (arbitrage-copy-bot style)
 
-### ⚠️ Current Limitations
-- **On-Chain Event Parsing**: May need refinement based on actual Polymarket contract event structure
-- **API Response Format**: Order book transformation assumes specific format - may need adjustment
-- **Cross-Platform Arb**: Requires external API integrations (Kalshi, etc.) - not critical for basic functionality
+When **`REQUIRE_ARB_SIGNAL=true`**, the bot only copies a trade if the market currently has an **internal arbitrage opportunity**: the cost to buy one share of YES and one share of NO is less than $1 (after a small fee buffer). That way you copy the target wallet only when there is a structural edge in the book, similar to a dedicated arbitrage-copy bot.
 
-### 🔧 Implementation Notes
-- The bot is designed to be extensible - add your own API integrations
-- WebSocket support is included for real-time updates
-- All components are async/await for high performance
-- TypeScript provides type safety and better IDE support
+### What is internal arbitrage?
 
-### 💰 Fee Considerations
-Polymarket introduced taker fees on short-term markets (15-min crypto markets):
-- Fees are higher on ~50/50 priced trades
-- Lower fees near 10¢/90¢ extremes
-- Market makers receive rebates
-- Account for fees in arbitrage calculations (currently assumes ~1%)
+On Polymarket, every binary market has YES and NO tokens. In theory **YES + NO = $1** (one of them pays $1 at resolution). If the **best ask** for YES plus the **best ask** for NO is **below $1**, you can buy both and lock in profit when the market resolves:
 
-### 🚨 Risk Warnings
-- **Not Financial Advice**: This is experimental software
-- **Test Thoroughly**: Start with small positions
-- **Slippage**: Fast execution is critical for small edges
-- **Competition**: Many bots compete for the same opportunities
-- **Platform Changes**: Polymarket may change fees/rules
+- **Example:** YES best ask = $0.48, NO best ask = $0.49 → total = $0.97. You pay $0.97, get $1 at resolution → ~3% profit (minus fees).
 
-## Extending the Bot
+The bot checks this using the CLOB order book (YES and NO token books) and a ~1% fee buffer. It only treats it as “arb exists” if the implied profit is at least **`MIN_ARB_PROFIT_PCT`** (default 1%).
 
-### Add Cross-Platform Arbitrage
-1. Integrate Kalshi API (or other platform) in `arbitrage-detector.ts`
-2. Implement market matching logic
-3. Add price comparison and profit calculation
+### Flow when `REQUIRE_ARB_SIGNAL=true`
 
-### Improve Wallet Monitoring
-1. Implement on-chain event parsing (ethers.js or web3.js)
-2. Use Polymarket's activity API if available
-3. Add websocket subscriptions for real-time updates
+```
+Target wallet trade detected
+        │
+        ▼
+  Get market (conditionId) → YES/NO token IDs
+        │
+        ▼
+  Fetch order books (POST /books) for both tokens
+        │
+        ▼
+  Best ask YES + Best ask NO (with fee buffer) < $0.99?
+        │
+        ├─ NO  → Skip copy, log: "Skipping copy – no arbitrage signal..."
+        │
+        └─ YES → Profit % ≥ MIN_ARB_PROFIT_PCT?
+                    │
+                    ├─ NO  → Skip copy
+                    └─ YES → Copy trade (same as normal copy flow)
+```
 
-### Add More Filters
-- Win rate tracking per wallet
-- Market category filters
-- Time-based filters (e.g., only trade during certain hours)
-- Volume-based filters
+### When to use it
 
-## Logging
+| Mode | `REQUIRE_ARB_SIGNAL` | Behavior |
+|------|----------------------|----------|
+| **Copy everything** | `false` (default) | Copy every trade from `TARGET_WALLET`. |
+| **Copy only when arb** | `true` | Copy only when that market has YES+NO &lt; $1 and profit ≥ `MIN_ARB_PROFIT_PCT`. |
 
-Logs are written to:
-- Console (using console.log/error/warn)
-- Can be extended with Winston or other logging libraries
+Use **`true`** when the wallet you follow is arbitrage-focused and you want to mirror only when the book actually has an arb opportunity. Use **`false`** for plain copy trading with no arb filter.
 
-## License
+### Env vars for arbitrage filter
 
-This is experimental software. Use at your own risk.
+| Variable | Description |
+|----------|-------------|
+| `REQUIRE_ARB_SIGNAL` | `true` = only copy if arb exists in that market; `false` = copy all (default). |
+| `MIN_ARB_PROFIT_PCT` | Min profit fraction to count as arb (e.g. `0.01` = 1%). Default: `0.01`. |
 
-## Contributing
+**Example (arbitrage-style copy):**
 
-This is a starting point. Key areas for improvement:
-1. Complete API integrations (wallet monitoring, order signing)
-2. Add cross-platform arbitrage detection
-3. Implement advanced risk metrics
-4. Add backtesting capabilities
-5. Performance optimizations
+```env
+TARGET_WALLET=0x...
+REQUIRE_ARB_SIGNAL=true
+MIN_ARB_PROFIT_PCT=0.01
+SIZE_MULTIPLIER=0.5
+MAX_ORDER_AMOUNT=100
+```
 
+### Note on execution
+
+This bot does **not** place the full “buy YES + buy NO” arb leg itself. It only **filters**: copy the target’s trade **when** an arb exists. The copied order is still the same side/outcome/size as the target (e.g. buy YES). A full two-legged arb execution can be added on top if desired.
+
+---
+
+## Security notes
+
+- **Never commit `.env` or your `PRIVATE_KEY`.** Use environment variables or a secrets manager in production.
+- Run with a dedicated wallet and only fund it with what you’re willing to trade.
+- Copy trading carries risk; the bot mirrors another wallet’s actions without guarantees.

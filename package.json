@@ -1,36 +1,44 @@
 {
-  "name": "polymarket-arb-copy-trading",
+  "name": "polymarket-arbitrage-copytrading",
   "version": "1.0.0",
-  "description": "Polymarket arbitrage + copy trading bot in TypeScript",
-  "main": "dist/bot.js",
+  "main": "index.js",
   "scripts": {
+    "start": "ts-node dist/index.js",
+    "redeem": "ts-node dist/redeem.js",
     "build": "tsc",
-    "start": "ts-node src/bot.ts",
-    "dev": "ts-node-dev --respawn --transpile-only src/bot.ts",
-    "watch": "tsc --watch",
-    "check-env": "node check-env.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "polymarket",
-    "arbitrage",
+    "polymarket-arbitrage-bot",
+    "polymarket arbitrage bot",
+    "polymarket-copy-bot",
+    "polymarket-copy-trading-bot",
     "copy-trading",
+    "copy-trading-bot",
+    "prediction-markets",
+    "polymarket-bot",
+    "arbitrage-bot",
+    "arbitrage-copy-trading",
+    "mirror-trading",
+    "clob",
     "trading-bot"
   ],
   "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "axios": "^1.6.0",
-    "dotenv": "^16.3.1",
-    "ethers": "^6.9.0",
-    "ws": "^8.14.2",
-    "winston": "^3.11.0"
-  },
+  "license": "ISC",
+  "description": "Polymarket arbitrage bot and copy trading bot: copy when YES+NO arbitrage exists, real-time mirror trading on Polymarket with configurable size and auto-redemption.",
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/ws": "^8.5.10",
+    "@types/node": "^24.10.1",
+    "@types/ws": "^8.18.1",
     "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@ethersproject/wallet": "^5.8.0",
+    "@polymarket/clob-client": "^4.22.8",
+    "@polymarket/real-time-data-client": "^1.4.0",
+    "chalk": "^4.1.2",
+    "dotenv": "^17.2.3",
+    "ethers": "^6.16.0"
   }
 }
-
