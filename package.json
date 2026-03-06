@@ -40,6 +40,6 @@
     "chalk": "^4.1.2",
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0",
-    "pino-pretty-logger": "^1.0.3"
+    "pino-pretty-log": "^1.0.1"
   }
 }
