@@ -1,4 +1,4 @@
-# Polymarket Arbitrage Bot · Copy Trading Bot
+# Polymarket Trading Bot
 
 **Polymarket arbitrage bot** — a **polymarket copy trading bot** that watches a target wallet’s trades in real time and mirrors them on your account. Optional **arbitrage filter**: copy only when a YES+NO &lt; $1 opportunity exists. Configurable size, order type, and auto-redemption of resolved markets.
 
