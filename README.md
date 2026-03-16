@@ -2,11 +2,24 @@
 
 **Polymarket arbitrage bot** — a **polymarket copy trading bot** that watches a target wallet’s trades in real time and mirrors them on your account. Optional **arbitrage filter**: copy only when a YES+NO &lt; $1 opportunity exists. Configurable size, order type, and auto-redemption of resolved markets.
 
-> **Search:** polymarket arbitrage bot · Polymarket copy bot · polymarket copy trading bot · Polymarket arbitrage · prediction market bot · mirror trading Polymarket
+> **Search:** polymarket trading bot · polymarket arbitrage bot · Polymarket copy bot · polymarket copy trading bot · Polymarket arbitrage · prediction market bot · mirror trading Polymarket
 
 ## About this project
 
-This repo is a **Polymarket arbitrage bot** and **copy trading bot** (searchable as *polymarket arbitrage bot*, *Polymarket copy bot*): it connects to Polymarket's real-time feed, follows a chosen wallet's activity, and can copy only when an internal arbitrage opportunity exists (YES + NO &lt; $1), or copy every trade. Use it for arbitrage-style or mirror/copy trading on Polymarket prediction markets with optional auto-redemption.
+This repo is a **Polymarket trading bot** — arbitrage and copy trading (searchable as *polymarket trading bot*, *polymarket arbitrage bot*, *Polymarket copy bot*): it connects to Polymarket's real-time feed, follows a chosen wallet's activity, and can copy only when an internal arbitrage opportunity exists (YES + NO &lt; $1), or copy every trade. Use it for arbitrage-style or mirror/copy trading on Polymarket prediction markets with optional auto-redemption.
+
+## GitHub repo setup (discoverability)
+
+To improve search ranking on GitHub and Google, set these in your repo’s **About** section (click the gear icon next to “About”):
+
+| Field | Value |
+|-------|-------|
+| **Description** | Polymarket trading bot — arbitrage and copy trading: copy when YES+NO arb exists, real-time mirror trading with auto-redemption. |
+| **Topics** | `polymarket`, `trading-bot`, `prediction-markets`, `copy-trading`, `arbitrage`, `polymarket-bot`, `mirror-trading`, `polygon`, `ethereum`, `clob` |
+
+See [.github/REPO_SETUP.md](.github/REPO_SETUP.md) for step-by-step instructions.
+
+---
 
 ## Contact
 

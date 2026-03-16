@@ -1,5 +1,5 @@
 {
-  "name": "polymarket-arbitrage-copytrading",
+  "name": "polymarket-trading-bot",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,8 @@
   },
   "keywords": [
     "polymarket",
+    "polymarket-trading-bot",
+    "polymarket trading bot",
     "polymarket-arbitrage-bot",
     "polymarket arbitrage bot",
     "polymarket-copy-bot",
@@ -23,11 +25,22 @@
     "arbitrage-copy-trading",
     "mirror-trading",
     "clob",
-    "trading-bot"
+    "trading-bot",
+    "prediction-market",
+    "ethereum",
+    "polygon"
   ],
   "author": "",
   "license": "ISC",
-  "description": "Polymarket arbitrage bot and copy trading bot: copy when YES+NO arbitrage exists, real-time mirror trading on Polymarket with configurable size and auto-redemption.",
+  "description": "Polymarket trading bot — arbitrage and copy trading: copy when YES+NO arbitrage exists, real-time mirror trading on Polymarket with configurable size and auto-redemption.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/polymarket-bot-tools/polymarket-trading-bot.git"
+  },
+  "homepage": "https://github.com/polymarket-bot-tools/polymarket-trading-bot#readme",
+  "bugs": {
+    "url": "https://github.com/polymarket-bot-tools/polymarket-trading-bot/issues"
+  },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/ws": "^8.18.1",
