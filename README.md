@@ -1,6 +1,6 @@
 # Polymarket Trading Bot
 
-Real-time copy trading on Polymarket: mirrors trades from a target wallet to yours. Configurable size, order type, and auto-redemption.
+A **polymarket trading bot** and polymarket copy trading bot: mirrors trades from a target wallet to yours in real time. Configurable size, order type, and auto-redemption.
 
 > *Search: polymarket trading bot · polymarket copy bot · polymarket copytrading bot*
 
