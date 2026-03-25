@@ -1,74 +1,104 @@
-# Polymarket Trading Bot
+# Polymarket Copy Trading Bot
 
-A **polymarket trading bot** and polymarket copy trading bot: mirrors trades from a target wallet to yours in real time. Configurable size, order type, and auto-redemption.
+A **Polymarket copy bot** for copy trading on Polymarket prediction markets. Watches a target wallet and automatically copies `BUY` and `SELL` trades with configurable sizing and risk caps.
 
-> *Search: polymarket trading bot · polymarket copy bot · polymarket copytrading bot*
+**Keywords:** polymarket trading bot, polymarket copy bot, polymarket copy trading bot, prediction market bot, automated trading
 
-<img width="1042" height="697" alt="image" src="https://github.com/user-attachments/assets/9ec55b28-b938-4be1-824b-d065d643e069" />
+## What It Does
 
+- Watches a target wallet via REST polling.
+- Uses WebSocket subscriptions for faster market updates when enabled.
+- Copies `BUY` and optionally `SELL` trades (set `COPY_SELLS=true` to copy sells; requires holding position from copied BUYs).
+- Auto-checks/sets required token approvals in EOA mode.
+- Applies position sizing, slippage, and optional notional risk caps.
 
-**Requirements:** Node.js 18+ · Polygon wallet with USDC
+## Prerequisites
 
-## Quick Start
+- Node.js 18+ and npm
+- Polygon EOA funded with `USDC.e` collateral and `POL` (MATIC) for gas
+- Polymarket account tied to the same EOA/private key
+- Polygon RPC URL (QuickNode recommended)
+
+## Region Restrictions
+
+Polymarket restricts access in some regions. **If you are in a restricted region, the bot will not work** — you will see connection or Cloudflare/geo errors. In that case, route traffic through a proxy or VPN (many free proxy services are available). Run the bot from an environment where Polymarket is accessible.
+
+## Credentials
+
+- The bot derives/creates User CLOB credentials from `PRIVATE_KEY` at startup.
+- Builder dashboard keys are for attribution and are not valid trading auth credentials for order placement.
+
+## Setup
+
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-Create `.env` with:
+2. Create your local env file:
 
-| Variable | Description |
-|---------|-------------|
-| `PRIVATE_KEY` | Wallet private key |
-| `TARGET_WALLET` | Address to copy trades from |
-| `RPC_TOKEN` | Polygon RPC URL (e.g. Alchemy/Infura) |
+```bash
+cp .env.example .env
+```
 
-Optional: `SIZE_MULTIPLIER` (default `1.0`), `MAX_ORDER_AMOUNT`, `REDEEM_DURATION` (minutes for auto-redeem).
+3. Fill required values in `.env`:
+
+- `TARGET_WALLET`
+- `PRIVATE_KEY`
+- `RPC_URL`
+
+4. (Optional) Generate and inspect user API credentials:
+
+```bash
+npm run generate-api-creds
+```
+
+## Run
 
 ```bash
 npm start
 ```
 
-## Scripts
+Dev/watch mode:
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Run copy-trading bot |
-| `npm run redeem` | Redeem by condition ID |
-| `bun src/auto-redeem.ts` | Batch redeem resolved markets |
+```bash
+npm run dev
+```
 
-## How it works
+Build + run compiled output:
 
-1. Connects to Polymarket real-time feed
-2. Filters trades by `TARGET_WALLET`
-3. Copies each trade with your multiplier/limits
-4. Optionally auto-redeems resolved markets
+```bash
+npm run build
+npm run start:prod
+```
 
-## Configuration
+## Key Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SIZE_MULTIPLIER` | 1.0 | Scale copied size |
-| `MAX_ORDER_AMOUNT` | — | Cap per order |
-| `ORDER_TYPE` | FAK | FAK or FOK |
-| `TICK_SIZE` | 0.01 | 0.1, 0.01, 0.001, 0.0001 |
-| `NEG_RISK` | false | Neg-risk markets |
-| `REDEEM_DURATION` | — | Auto-redeem interval (minutes) |
+- `TARGET_WALLET`: wallet to follow
+- `PRIVATE_KEY`: your EOA private key used for signing/approvals/trades
+- `RPC_URL`: Polygon JSON-RPC endpoint
+- `USE_WEBSOCKET`: `true|false`
+- `USE_USER_CHANNEL`: `true|false` (`true` requires valid API creds for WS auth)
+- `POSITION_MULTIPLIER`: copied size multiplier (e.g. `0.1`)
+- `MAX_TRADE_SIZE`, `MIN_TRADE_SIZE`
+- `SLIPPAGE_TOLERANCE`: e.g. `0.02`
+- `ORDER_TYPE`: `LIMIT`, `FOK`, or `FAK`
+- `COPY_SELLS`: `true|false` — copy SELL trades in addition to BUY (default: true)
+- `EXIT_AFTER_FIRST_SELL_COPY`: `true|false` — exit successfully after first SELL is copied (default: false)
+- `MAX_SESSION_NOTIONAL`, `MAX_PER_MARKET_NOTIONAL`: `0` disables caps
+
+See `.env.example` for the full list.
+
+## Notes
+
+- Also known as: polymarket copy bot, polymarket copy trading, polymarket copy trading bot.
+- The bot starts copying only trades that happen after startup time.
+- User API credentials are derived/generated from `PRIVATE_KEY` at startup.
+- Frequent WebSocket disconnect/reconnect can happen; REST polling remains active as fallback.
 
 ## Security
 
-- Never commit `.env` or `PRIVATE_KEY`
-- Use a dedicated wallet with limited funds
-- Copy trading carries risk
-
-## Contact
-
-Telegram [@hodlwarden](https://t.me/hodlwarden) · Email [hodlwarden@gmail.com](mailto:hodlwarden@gmail.com)
-
-## License
-
-ISC — see [LICENSE](LICENSE). Having a license helps the repo appear in GitHub license-filtered search (e.g. `license:isc`).
-
----
-
-*GitHub repo setup for discoverability: see [.github/REPO_SETUP.md](.github/REPO_SETUP.md)*
+- Never commit `.env`.
+- Use a dedicated wallet for bot trading.
+- Start with small limits before increasing size.

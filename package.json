@@ -1,55 +1,47 @@
 {
-  "name": "polymarket-trading-bot",
+  "name": "polymarket-copy-bot",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "dev": "ts-node src/index.ts",
+    "start": "tsx src/index.ts",
+    "start:until-sell": "EXIT_AFTER_FIRST_SELL_COPY=true tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "generate-api-creds": "tsx src/generate-api-creds.ts",
+    "test-api-creds": "tsx src/test-api-creds.ts",
     "build": "tsc",
-    "redeem": "ts-node dist/redeem.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:prod": "node dist/index.js"
   },
   "keywords": [
     "polymarket",
-    "polymarket-trading-bot",
-    "polymarket trading bot",
     "polymarket-copy-bot",
-    "polymarket-copy-trading-bot",
-    "copy-trading",
-    "copy-trading-bot",
-    "prediction-markets",
-    "polymarket-bot",
-    "mirror-trading",
+    "polymarket copy bot",
+    "polymarket copy trading",
+    "polymarket copy trading bot",
+    "polymarket trading bot",
+    "copy trading",
+    "copy bot",
+    "prediction markets",
     "clob",
-    "trading-bot",
-    "prediction-market",
-    "ethereum",
-    "polygon"
+    "polygon",
+    "ethereum"
   ],
   "author": "",
   "license": "ISC",
-  "description": "Polymarket copy trading bot — real-time mirror trading on Polymarket with configurable size and auto-redemption.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/polymarket-bot-tools/polymarket-trading-bot.git"
-  },
-  "homepage": "https://github.com/polymarket-bot-tools/polymarket-trading-bot#readme",
-  "bugs": {
-    "url": "https://github.com/polymarket-bot-tools/polymarket-trading-bot/issues"
+  "description": "Polymarket copy trading bot — automatically copies BUY/SELL trades from a target Polymarket wallet with configurable sizing and risk caps",
+  "dependencies": {
+    "@polymarket/clob-client": "^5.2.1",
+    "axios": "^1.13.4",
+    "chalk": "^5.6.2",
+    "dotenv": "^17.2.3",
+    "ethers": "^5.7.2",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@types/ws": "^8.18.1",
+    "@types/node": "^25.1.0",
+    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@ethersproject/wallet": "^5.8.0",
-    "@polymarket/clob-client": "^4.22.8",
-    "@polymarket/real-time-data-client": "^1.4.0",
-    "chalk": "^4.1.2",
-    "dotenv": "^17.2.3",
-    "ethers": "^6.16.0",
-    "pino-pretty-log": "^1.0.1"
   }
 }
