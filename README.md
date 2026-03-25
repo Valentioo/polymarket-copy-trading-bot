@@ -4,6 +4,10 @@ A **Polymarket copy bot** for copy trading on Polymarket prediction markets. Wat
 
 **Keywords:** polymarket trading bot, polymarket copy bot, polymarket copy trading bot, prediction market bot, automated trading
 
+## Donations
+
+If you find this project helpful, consider donating to: `0xc0558F8d04eeec440Df8BCec52BD02CA2a3B4437`
+
 ## What It Does
 
 - Watches a target wallet via REST polling.
