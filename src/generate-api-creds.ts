@@ -1,13 +1,13 @@
 import dotenv from 'dotenv';
 import { Wallet } from 'ethers';
-import { ClobClient } from '@polymarket/clob-client';
+import { Chain, ClobClient } from '@polymarket/clob-client-v2';
 import * as fs from 'fs';
 import { logger } from './logger.js';
 
 dotenv.config();
 
 const HOST = 'https://clob.polymarket.com';
-const CHAIN_ID = 137;
+const CHAIN = Chain.POLYGON;
 
 async function main(): Promise<void> {
   const privateKey = process.env.PRIVATE_KEY;
@@ -16,15 +16,11 @@ async function main(): Promise<void> {
   }
 
   const signer = new Wallet(privateKey);
-  const client = new ClobClient(
-    HOST,
-    CHAIN_ID,
+  const client = new ClobClient({
+    host: HOST,
+    chain: CHAIN,
     signer,
-    undefined,
-    undefined,
-    undefined,
-    process.env.POLYMARKET_GEO_TOKEN || undefined
-  );
+  });
 
   let creds = await client.deriveApiKey().catch(() => null);
   if (!creds || (creds as any).error) {

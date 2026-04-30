@@ -1,3 +1,3 @@
-import { logger } from "pino-pretty-logs";
+import { logger } from "color-cli-log";
 
 export { logger };

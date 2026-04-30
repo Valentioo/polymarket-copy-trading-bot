@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { getContractConfig } from '@polymarket/clob-client-v2';
 import { logger } from './logger.js';
 
 function parseCsv(value?: string): string[] {
@@ -10,6 +11,7 @@ function parseCsv(value?: string): string[] {
 
 function buildConfigFromProcessEnv() {
   const useWebSocket = process.env.USE_WEBSOCKET !== 'false';
+  const contractConfig = getContractConfig(137);
 
   return {
     targetWallet: process.env.TARGET_WALLET || '',
@@ -19,11 +21,11 @@ function buildConfigFromProcessEnv() {
     chainId: 137 as const,
 
     contracts: {
-      exchange: '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E',
-      ctf: '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045',
-      usdc: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
-      negRiskAdapter: '0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296',
-      negRiskExchange: '0xC5d563A36AE78145C45a50134d48A1215220f80a',
+      exchange: contractConfig.exchangeV2,
+      ctf: contractConfig.conditionalTokens,
+      collateral: contractConfig.collateral,
+      negRiskAdapter: contractConfig.negRiskAdapter,
+      negRiskExchange: contractConfig.negRiskExchangeV2,
     },
 
     trading: {
@@ -51,6 +53,7 @@ function buildConfigFromProcessEnv() {
       wsAssetIds: parseCsv(process.env.WS_ASSET_IDS),
       wsMarketIds: parseCsv(process.env.WS_MARKET_IDS),
     },
+    builderCode: process.env.POLY_BUILDER_CODE || '',
   };
 }
 

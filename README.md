@@ -15,9 +15,10 @@ A **Polymarket copy bot** for copy trading on Polymarket prediction markets. Wat
 ## Prerequisites
 
 - Node.js 18+ and npm
-- Polygon EOA funded with `USDC.e` collateral and `POL` (MATIC) for gas
+- Polygon EOA funded with `pUSD` collateral and `POL` (MATIC) for gas
 - Polymarket account tied to the same EOA/private key
 - Polygon RPC URL (QuickNode recommended)
+- CLOB v2-compatible setup (this project uses `@polymarket/clob-client-v2`)
 
 ## Region Restrictions
 
@@ -27,6 +28,8 @@ Polymarket restricts access in some regions. **If you are in a restricted region
 
 - The bot derives/creates User CLOB credentials from `PRIVATE_KEY` at startup.
 - Builder dashboard keys are for attribution and are not valid trading auth credentials for order placement.
+- Optional builder attribution is supported through `POLY_BUILDER_CODE`.
+- API-only users must manually wrap `USDC.e` into `pUSD` before trading.
 
 ## Setup
 
@@ -78,6 +81,7 @@ npm run start:prod
 - `TARGET_WALLET`: wallet to follow
 - `PRIVATE_KEY`: your EOA private key used for signing/approvals/trades
 - `RPC_URL`: Polygon JSON-RPC endpoint
+- `POLY_BUILDER_CODE`: optional builder attribution code attached to orders
 - `USE_WEBSOCKET`: `true|false`
 - `USE_USER_CHANNEL`: `true|false` (`true` requires valid API creds for WS auth)
 - `POSITION_MULTIPLIER`: copied size multiplier (e.g. `0.1`)
@@ -87,6 +91,7 @@ npm run start:prod
 - `COPY_SELLS`: `true|false` — copy SELL trades in addition to BUY (default: true)
 - `EXIT_AFTER_FIRST_SELL_COPY`: `true|false` — exit successfully after first SELL is copied (default: false)
 - `MAX_SESSION_NOTIONAL`, `MAX_PER_MARKET_NOTIONAL`: `0` disables caps
+- `INIT_RETRY_MS`: retry interval when env/init/runtime errors occur
 
 See `.env.example` for the full list.
 
@@ -96,6 +101,7 @@ See `.env.example` for the full list.
 - The bot starts copying only trades that happen after startup time.
 - User API credentials are derived/generated from `PRIVATE_KEY` at startup.
 - Frequent WebSocket disconnect/reconnect can happen; REST polling remains active as fallback.
+- If `pUSD` balance/allowance is missing, the bot logs actionable instructions and retries instead of exiting.
 
 ## Security
 

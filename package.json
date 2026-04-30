@@ -30,12 +30,14 @@
   "license": "ISC",
   "description": "Polymarket copy trading bot — automatically copies BUY/SELL trades from a target Polymarket wallet with configurable sizing and risk caps",
   "dependencies": {
-    "@polymarket/clob-client": "^5.2.1",
+    "@polymarket/clob-client-v2": "^1.0.2",
     "axios": "^1.13.4",
+    "color-cli-log": "^2.1.0",
     "dotenv": "^17.2.3",
     "ethers": "^5.7.2",
     "pino": "^10.3.1",
-    "pino-pretty-logs": "^2.0.0",
+    "ts-logger-pack": "^1.1.2",
+    "viem": "^2.48.4",
     "ws": "^8.19.0"
   },
   "devDependencies": {

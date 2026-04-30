@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ethers } from 'ethers';
-import { ClobClient, Side, OrderType } from '@polymarket/clob-client';
+import { AssetType, Chain, ClobClient, Side, OrderType } from '@polymarket/clob-client-v2';
 import { config } from './config.js';
 import type { Trade } from './monitor.js';
 import { logger } from './logger.js';
@@ -11,7 +11,6 @@ interface MarketMetadata {
   tickSize: number;
   tickSizeStr: string;
   negRisk: boolean;
-  feeRateBps: number;
   conditionId?: string;
   timestamp: number;
 }
@@ -63,15 +62,13 @@ export class TradeExecutor {
     this.provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
     this.wallet = new ethers.Wallet(config.privateKey, this.provider);
 
-    this.clobClient = new ClobClient(
-      'https://clob.polymarket.com',
-      137,
-      this.wallet,
-      undefined,
-      undefined,
-      undefined,
-      config.polymarketGeoToken || undefined
-    );
+    const builderCode = this.getBuilderCode();
+    this.clobClient = new ClobClient({
+      host: 'https://clob.polymarket.com',
+      chain: Chain.POLYGON,
+      signer: this.wallet,
+      ...(builderCode ? { builderConfig: { builderCode } } : {}),
+    });
   }
   
   async initialize(): Promise<void> {
@@ -80,6 +77,9 @@ export class TradeExecutor {
     const funderAddress = this.wallet.address;
     logger.info(`   Funder wallet: ${funderAddress}`);
     logger.info(`   Signature type: 0`);
+    if (this.getBuilderCode()) {
+      logger.info(`   Builder attribution: enabled`);
+    }
 
     try {
       await this.deriveAndReinitApiKeys(funderAddress);
@@ -137,19 +137,25 @@ export class TradeExecutor {
       passphrase: creds.passphrase,
     };
 
-    this.clobClient = new ClobClient(
-      'https://clob.polymarket.com',
-      137,
-      this.wallet,
-      {
+    const builderCode = this.getBuilderCode();
+    this.clobClient = new ClobClient({
+      host: 'https://clob.polymarket.com',
+      chain: Chain.POLYGON,
+      signer: this.wallet,
+      creds: {
         key: apiKey,
         secret: creds.secret,
         passphrase: creds.passphrase,
       },
-      0,
+      signatureType: 0,
       funderAddress,
-      config.polymarketGeoToken || undefined
-    );
+      ...(builderCode ? { builderConfig: { builderCode } } : {}),
+    });
+  }
+
+  private getBuilderCode(): string | undefined {
+    const code = config.builderCode?.trim();
+    return code ? code : undefined;
   }
 
   getWsAuth(): { apiKey: string; secret: string; passphrase: string } | undefined {
@@ -201,10 +207,9 @@ export class TradeExecutor {
     }
 
     try {
-      const [tickSizeData, negRisk, feeRateBps] = await Promise.all([
+      const [tickSizeData, negRisk] = await Promise.all([
         this.clobClient.getTickSize(tokenId).catch(() => ({ minimum_tick_size: '0.01' })),
         this.clobClient.getNegRisk(tokenId).catch(() => false),
-        this.clobClient.getFeeRateBps(tokenId).catch(() => 0),
       ]);
 
       const tickSizeStr = (tickSizeData as any)?.minimum_tick_size || tickSizeData || '0.01';
@@ -214,7 +219,6 @@ export class TradeExecutor {
         tickSize,
         tickSizeStr,
         negRisk,
-        feeRateBps,
         timestamp: now,
       };
 
@@ -227,7 +231,6 @@ export class TradeExecutor {
         tickSize: 0.01,
         tickSizeStr: '0.01',
         negRisk: false,
-        feeRateBps: 0,
         timestamp: now,
       };
       this.marketCache.set(tokenId, defaultMetadata);
@@ -414,13 +417,14 @@ export class TradeExecutor {
     logger.info(`   Limit price: ${validatedPrice.toFixed(4)}`);
     logger.info(`   Copy shares: ${copyShares}`);
 
+    const builderCode = this.getBuilderCode();
     const response = await this.clobClient.createAndPostOrder(
       {
         tokenID: originalTrade.tokenId,
         price: validatedPrice,
         size: copyShares,
         side: originalTrade.side as Side,
-        feeRateBps: 0,
+        ...(builderCode ? { builderCode } : {}),
       },
       orderOpts,
       OrderType.GTC
@@ -466,14 +470,15 @@ export class TradeExecutor {
     logger.info(`   Copy shares: ${copyShares}`);
 
     const orderTypeEnum = orderType === 'FOK' ? OrderType.FOK : OrderType.FAK;
+    const builderCode = this.getBuilderCode();
     const response = await this.clobClient.createAndPostMarketOrder(
       {
         tokenID: originalTrade.tokenId,
         amount: originalTrade.side === 'BUY' ? copyNotional : copyShares,
         price: validatedPrice,
         side: originalTrade.side as Side,
-        feeRateBps: 0,
         orderType: orderTypeEnum,
+        ...(builderCode ? { builderCode } : {}),
       },
       orderOpts,
       orderTypeEnum
@@ -565,36 +570,39 @@ export class TradeExecutor {
       const metadata = await this.getMarketMetadata(tokenId);
       const exchangeAddress = metadata.negRisk ? config.contracts.negRiskExchange : config.contracts.exchange;
 
-      const usdc = new ethers.Contract(config.contracts.usdc, this.ERC20_ABI, this.wallet);
+      const collateral = new ethers.Contract(config.contracts.collateral, this.ERC20_ABI, this.wallet);
       const ctf = new ethers.Contract(config.contracts.ctf, this.CTF_ABI, this.wallet);
-      const decimals = await usdc.decimals();
+      const decimals = await collateral.decimals();
       const required = ethers.utils.parseUnits(requiredAmount.toString(), decimals);
 
-      const balance = await usdc.balanceOf(this.wallet.address);
+      const balance = await collateral.balanceOf(this.wallet.address);
       if (balance.lt(required)) {
         const bal = ethers.utils.formatUnits(balance, decimals);
-        throw new Error(`not enough balance / allowance (USDC.e balance ${bal} < required ${requiredAmount})`);
+        throw new Error(
+          `not enough balance / allowance (pUSD balance ${bal} < required ${requiredAmount}). ` +
+          'Manual action required: wrap USDC.e to pUSD before trading on CLOB v2.'
+        );
       }
 
-      const allowanceCtf = await usdc.allowance(this.wallet.address, config.contracts.ctf);
+      const allowanceCtf = await collateral.allowance(this.wallet.address, config.contracts.ctf);
       if (allowanceCtf.lt(required)) {
         const allow = ethers.utils.formatUnits(allowanceCtf, decimals);
-        throw new Error(`not enough balance / allowance (USDC.e allowance to CTF ${allow} < required ${requiredAmount})`);
+        throw new Error(`not enough balance / allowance (pUSD allowance to CTF ${allow} < required ${requiredAmount})`);
       }
 
-      const allowanceEx = await usdc.allowance(this.wallet.address, exchangeAddress);
+      const allowanceEx = await collateral.allowance(this.wallet.address, exchangeAddress);
       if (allowanceEx.lt(required)) {
         const allow = ethers.utils.formatUnits(allowanceEx, decimals);
-        throw new Error(`not enough balance / allowance (USDC.e allowance to Exchange ${allow} < required ${requiredAmount})`);
+        throw new Error(`not enough balance / allowance (pUSD allowance to Exchange ${allow} < required ${requiredAmount})`);
       }
 
-      const clobBal = await this.clobClient.getBalanceAllowance({ asset_type: 'COLLATERAL' });
+      const clobBal = await this.clobClient.getBalanceAllowance({ asset_type: AssetType.COLLATERAL });
       const clobBalance = parseFloat(clobBal?.balance || '0') / 1_000_000;
       if (clobBalance < requiredAmount) {
         throw new Error(`not enough balance / allowance (CLOB balance ${clobBalance} < required ${requiredAmount})`);
       }
-      const clobAllowance = clobBal?.allowances?.[exchangeAddress] || '0';
-      if (clobAllowance === '0') {
+      const clobAllowance = parseFloat(clobBal?.allowance || '0');
+      if (!Number.isFinite(clobAllowance) || clobAllowance <= 0) {
         throw new Error(`not enough balance / allowance (CLOB allowance to Exchange is 0)`);
       }
 
@@ -636,7 +644,7 @@ export class TradeExecutor {
     logger.info('🔐 Checking required token approvals (EOA mode)...');
 
     try {
-      const usdc = new ethers.Contract(config.contracts.usdc, this.ERC20_ABI, this.wallet);
+      const collateral = new ethers.Contract(config.contracts.collateral, this.ERC20_ABI, this.wallet);
       const ctf = new ethers.Contract(config.contracts.ctf, this.CTF_ABI, this.wallet);
 
       const maticBal = await this.provider.getBalance(this.wallet.address);
@@ -645,34 +653,34 @@ export class TradeExecutor {
         logger.warn(`   ⚠️  Low POL/MATIC for gas: ${maticAmount.toFixed(4)}`);
       }
 
-      const decimals = await usdc.decimals();
+      const decimals = await collateral.decimals();
       const minAllowance = ethers.utils.parseUnits(config.trading.maxTradeSize.toString(), decimals);
       const gasOverrides = await this.getGasOverrides();
 
       let anyApprovalStepFailed = false;
 
-      const usdcSpenders = [
+      const collateralSpenders = [
         { name: 'CTF', address: config.contracts.ctf },
         { name: 'CTF Exchange', address: config.contracts.exchange },
         { name: 'Neg Risk CTF Exchange', address: config.contracts.negRiskExchange },
       ];
 
-      for (const spender of usdcSpenders) {
+      for (const spender of collateralSpenders) {
         try {
-          const allowance = await usdc.allowance(this.wallet.address, spender.address);
+          const allowance = await collateral.allowance(this.wallet.address, spender.address);
           if (allowance.lt(minAllowance)) {
-            logger.info(`   Approving USDC.e to ${spender.name} (${spender.address})...`);
-            const tx = await usdc.approve(spender.address, ethers.constants.MaxUint256, gasOverrides);
+            logger.info(`   Approving pUSD to ${spender.name} (${spender.address})...`);
+            const tx = await collateral.approve(spender.address, ethers.constants.MaxUint256, gasOverrides);
             logger.info(`   Tx: ${tx.hash}`);
             await tx.wait();
-            logger.info(`   ✅ USDC.e approved to ${spender.name}`);
+            logger.info(`   ✅ pUSD approved to ${spender.name}`);
           } else {
-            logger.info(`   ✅ USDC.e already approved to ${spender.name}`);
+            logger.info(`   ✅ pUSD already approved to ${spender.name}`);
           }
         } catch (err: any) {
           anyApprovalStepFailed = true;
           logger.error(
-            `   ❌ USDC.e approval failed (${spender.name}): ${err?.message || String(err)} — continuing without this approval`
+            `   ❌ pUSD approval failed (${spender.name}): ${err?.message || String(err)} — continuing without this approval`
           );
         }
       }
